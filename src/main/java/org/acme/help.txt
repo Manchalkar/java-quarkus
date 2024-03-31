@@ -1,0 +1,23 @@
+        // Token is valid, proceed with the request
+        requestContext.setSecurityContext(new SecurityContext() {
+            @Override
+            public Principal getUserPrincipal() {
+                return () -> jwt.getName();
+            }
+
+            @Override
+            public boolean isUserInRole(String role) {
+                // Implement your role-based authorization logic here if needed
+                return false;
+            }
+
+            @Override
+            public boolean isSecure() {
+                return requestContext.getSecurityContext().isSecure();
+            }
+
+            @Override
+            public String getAuthenticationScheme() {
+                return "Bearer";
+            }
+        });

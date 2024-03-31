@@ -16,7 +16,6 @@ public class TokenGeneratorService {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("username", userDetails.getUsername());
-
-        return Jwt.claim("username" , userDetails.getUsername() ).issuer("someone").subject("some").groups(roles).expiresAt(System.currentTimeMillis()+3600).sign();
+        return Jwt.claim("username" , userDetails.getUsername() ).issuer("someone").subject("some").groups(roles).expiresAt(System.currentTimeMillis()+36000).sign();
     }
 }
