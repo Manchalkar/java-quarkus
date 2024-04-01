@@ -2,10 +2,13 @@ package org.acme;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Optional;
 
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
+
+import io.smallrye.jwt.build.Jwt;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
@@ -14,7 +17,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.ext.Provider;
 
-
 @Provider
 @PreMatching
 public class MyPreFilter implements ContainerRequestFilter {
@@ -22,7 +24,6 @@ public class MyPreFilter implements ContainerRequestFilter {
     @Inject
     Logger logger;
 
-    
     @Inject
     JsonWebToken jwt;
 
@@ -31,48 +32,61 @@ public class MyPreFilter implements ContainerRequestFilter {
 
         String authorizationHeader = requestContext.getHeaderString("Authorization");
 
-
         String path = requestContext.getUriInfo().getPath();
 
+  
 
-        //Login end point
+        // Login end point
         if ("/auth/login".equals(path)) {
             return;
         }
 
-        //If token is  missing
+        // If token is missing
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             abortWithUnauthorized(requestContext, "Bearer token is missing");
             return;
         }
 
-
-        //Check Token is expireed or not
-        if(!isValidToken()){
+        // Check Token is expireed or not
+        if (!isValidToken()) {
             abortWithUnauthorized(requestContext, "Token is Expired");
             return;
         }
 
-        
+
+        // Access token or refresh token
+        if ("/auth/getToken".equals(path)) {
+            logger.info(jwt.claim(Claims.sub).get().equals("refreshToken"));
+            if(jwt.claim(Claims.sub).get().equals("refreshToken")){
+                return;
+            }else{
+                abortWithUnauthorized(requestContext, "Refresh token is not Valid");
+            }
+        }else if(jwt.claim(Claims.sub).get().equals("accessToken")){
+            return;
+        }else{
+            abortWithUnauthorized(requestContext, "Token not valid");
+        }
+
     }
 
-    //Check token validation
+    // Check token validation
     private boolean isValidToken() {
         if (jwt == null || jwt.getRawToken() == null) {
-            return false; 
+            return false;
         }
         Long expiration = jwt.getClaim(Claims.exp);
-   
-        long currentTime = System.currentTimeMillis() ;
-        logger.info("Expiration = " + expiration + " CurrentTime = " + currentTime );
-        return expiration > currentTime;  
+
+        long currentTime = System.currentTimeMillis();
+        logger.info("Expiration = " + expiration + " CurrentTime = " + currentTime);
+        return expiration > currentTime;
     }
 
-
-    //Create repose if toke is not valid
+    // Create repose if toke is not valid
     private void abortWithUnauthorized(ContainerRequestContext requestContext, String message) {
         requestContext.abortWith(Response.status(Response.Status.UNAUTHORIZED)
-            .entity(message).build());
+                .entity(message).build());
     }
-    
+
+
 }
