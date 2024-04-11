@@ -3,7 +3,6 @@ package org.acme;
 public class Token {
     private String accesstoken;
     private String refreshToken;
-    private String test;
 
     // Constructors
     public Token() {
